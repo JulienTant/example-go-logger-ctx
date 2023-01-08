@@ -1,4 +1,4 @@
-package log
+package logger
 
 import (
 	"context"
@@ -32,6 +32,7 @@ func getFields(ctx context.Context) logrus.Fields {
 
 // WithLogger creates a new Logger from fields, and sets it on the Context.
 func WithLogger(ctx context.Context, logger logrus.FieldLogger) context.Context {
+	ctx = context.WithValue(ctx, fieldsKey{}, getFields(ctx))
 	return context.WithValue(ctx, loggerKey{}, logger)
 }
 
@@ -51,4 +52,20 @@ func WithFields(ctx context.Context, fields logrus.Fields) context.Context {
 		existing[k] = v
 	}
 	return context.WithValue(ctx, fieldsKey{}, existing)
+}
+
+// WithNonSpillingField adds the key and value to the logger rather than the context
+// this has for effect that the fields added there can only go down the stack
+// and not up
+func WithNonSpillingField(ctx context.Context, key string, value interface{}) context.Context {
+	logger := FromContext(ctx).WithField(key, value)
+	return WithLogger(ctx, logger)
+}
+
+// WithNonSpillingFields adds fields to the logger rather than the context
+// this has for effect that the fields added there can only go down the stack
+// and not up
+func WithNonSpillingFields(ctx context.Context, fields logrus.Fields) context.Context {
+	logger := FromContext(ctx).WithFields(fields)
+	return WithLogger(ctx, logger)
 }

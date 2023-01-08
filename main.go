@@ -3,41 +3,25 @@ package main
 import (
 	"context"
 
-	"github.com/julientant/example-go-logger-ctx/log"
+	"github.com/julientant/example-go-logger-ctx/logger"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	ctx := context.Background()
-	ctx = log.WithLogger(ctx, logrus.StandardLogger())
-	// we could do without the line above to use the default logger
-
-	log.FromContext(ctx).Info("hello from main, no fields")
-
-	// we can enrich the context with fields
-	ctx = log.WithField(ctx, "user_id", "user_123")
-	log.FromContext(ctx).Info("hello from main, with user_id field")
-
-	ctx = log.WithFields(ctx, logrus.Fields{
-		"request_id": "request_123",
-		"session_id": "session_123",
-	})
-	log.FromContext(ctx).Info("hello from main, with request_id and session_id fields")
-
-	secondFunc(ctx)
-
-	log.FromContext(ctx).Info("after second func, the context is still enriched")
+	ctx = logger.WithLogger(ctx, logrus.StandardLogger())
+	logger.FromContext(ctx).Info("hello world")
+	someDBOperation(ctx)
+	logger.FromContext(ctx).Info("bye")
 }
 
-func secondFunc(ctx context.Context) {
-	ctx = log.WithField(ctx, "added_from_second_func", "yes")
-
-	log.FromContext(ctx).Info("with our new field")
+func someDBOperation(ctx context.Context) {
+	ctx = logger.WithNonSpillingField(ctx, "enrich_logger", "yes")
+	ctx = logger.WithField(ctx, "enrich_context", "yes")
+	logger.FromContext(ctx).Info("some db operation")
+	needAssistance(ctx)
 }
 
-// Output:
-// INFO[0000] hello from main, no fields
-// INFO[0000] hello from main, with user_id field           user_id=user_123
-// INFO[0000] hello from main, with request_id and session_id fields  request_id=request_123 session_id=session_123 user_id=user_123
-// INFO[0000] with our new field                            added_from_second_func=yes request_id=request_123 session_id=session_123 user_id=user_123
-// INFO[0000] after second func, the context is still enriched  added_from_second_func=yes request_id=request_123 session_id=session_123 user_id=user_123
+func needAssistance(ctx context.Context) {
+	logger.FromContext(ctx).Info("need assistance")
+}
